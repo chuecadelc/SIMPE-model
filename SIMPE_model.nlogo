@@ -85,57 +85,58 @@ to setup
 
 
   ;; Data collection purposes
+  if Data-save? [
 
-  let Net ifelse-value Networks = "homophilous" [1][0]
-  let SM ifelse-value Social-Media = "filter-bubble_ON" [1][0]
-  let CEO ifelse-value Distribution? = "CEO2011" [1][0]
+    let Net ifelse-value Networks = "homophilous" [1][0]
+    let SM ifelse-value Social-Media = "filter-bubble_ON" [1][0]
+    let CEO ifelse-value Distribution? = "CEO2011" [1][0]
 
-  set filename (word "Net-" Net "_SM-" SM "_" probs-rewiring "_" protesting-opportunity "_" initial-protest-size "_" CEO ".csv")
-  set params (word behaviorspace-run-number "," Net "," SM "," probs-rewiring "," protesting-opportunity "," initial-protest-size)
+    set filename (word "Net-" Net "_SM-" SM "_" probs-rewiring "_" protesting-opportunity "_" initial-protest-size "_" CEO ".csv")
+    set params (word behaviorspace-run-number "," Net "," SM "," probs-rewiring "," protesting-opportunity "," initial-protest-size)
 
-  ;; creating different data files for each simulation combination - makes data outputs more manageable
+    ;; creating different data files for each simulation combination - makes data outputs more manageable
 
-  if not file-exists? word "attribs-" filename [
+    if not file-exists? word "attribs-" filename [
+      file-open word "attribs-" filename
+      file-print "run,Networks,Social-Media,probs.rewiring,protesting.opp,init.protest.size,t,agent,nat_id,protest_state"
+      file-close
+    ]
+
+    ;; Saving the initial nat_id distribution
     file-open word "attribs-" filename
-    file-print "run,Networks,Social-Media,probs.rewiring,protesting.opp,init.protest.size,t,agent,nat_id,protest_state"
+    ask turtles [file-print (word params "," 0 "," who "," nat_id  "," protest_state)]
     file-close
+
+    ;; creating model output file
+    if not file-exists? word "output-" filename [
+      file-open word "output-" filename
+      file-print "run,Networks,Social-Media,probs.rewiring,protesting.opp,init.protest.size,t,Nat_ID_variance,Nat_ID_weighted,Nat_ID_weighted_min,Nat_ID_weighted_max,Nat_ID_weighted_med,Nat_ID_weighted_med1,Protester,Homophilous,network_ties,protest_clustering,silent_clustering"
+      file-close
+    ]
+
+    ;;; when running sensitivity analyses -- comment out previous section and uncomment this section
+
+    ; set params1 (word behaviorspace-run-number "," Net "," SM "," s "," h)
+    ; set filename1 (word "Net-" Net "_SM-" SM "_" s "_" h "_CEO-" CEO ".csv")
+    ;
+    ;;;creating agent attribs file
+    ; if not file-exists? word "attribs-" filename1 [
+    ;   file-open word "attribs-" filename1
+    ;   file-print "run,Networks,Social-Media,s,h,t,agent,nat_id,protest_state"
+    ;   file-close
+    ; ]
+    ; ;; Saving the initial nat_id distribution
+    ; file-open word "attribs-" filename1
+    ; ask turtles [file-print (word params1 "," 0 "," who "," nat_id  "," protest_state)]
+    ; file-close
+    ;
+    ;;; creating model output file
+    ; if not file-exists? word "output-" filename1 [
+    ;   file-open word "output-" filename1
+    ;   file-print "run,Networks,Social-Media,s,h,t,Nat_ID_variance,Nat_ID_weighted,Nat_ID_weighted_min,Nat_ID_weighted_max,Nat_ID_weighted_med,Nat_ID_weighted_med1,Protester,Homophilous,network_ties,protest_clustering,silent_clustering"
+    ;   file-close
+    ; ]
   ]
-
-  ;; Saving the initial nat_id distribution
-  file-open word "attribs-" filename
-  ask turtles [file-print (word params "," 0 "," who "," nat_id  "," protest_state)]
-  file-close
-
-  ;; creating model output file
-  if not file-exists? word "output-" filename [
-    file-open word "output-" filename
-    file-print "run,Networks,Social-Media,probs.rewiring,protesting.opp,init.protest.size,t,Nat_ID_variance,Nat_ID_weighted,Nat_ID_weighted_min,Nat_ID_weighted_max,Nat_ID_weighted_med,Nat_ID_weighted_med1,Protester,Homophilous,network_ties,protest_clustering,silent_clustering"
-    file-close
-  ]
-
-
-;;; when running sensitivity analyses -- comment out previous section and uncomment this section
-
-; set params1 (word behaviorspace-run-number "," Net "," SM "," s "," h)
-; set filename1 (word "Net-" Net "_SM-" SM "_" s "_" h "_CEO-" CEO ".csv")
-;
-;;;creating agent attribs file
-; if not file-exists? word "attribs-" filename1 [
-;   file-open word "attribs-" filename1
-;   file-print "run,Networks,Social-Media,s,h,t,agent,nat_id,protest_state"
-;   file-close
-; ]
-; ;; Saving the initial nat_id distribution
-; file-open word "attribs-" filename1
-; ask turtles [file-print (word params1 "," 0 "," who "," nat_id  "," protest_state)]
-; file-close
-;
-;;; creating model output file
-; if not file-exists? word "output-" filename1 [
-;   file-open word "output-" filename1
-;   file-print "run,Networks,Social-Media,s,h,t,Nat_ID_variance,Nat_ID_weighted,Nat_ID_weighted_min,Nat_ID_weighted_max,Nat_ID_weighted_med,Nat_ID_weighted_med1,Protester,Homophilous,network_ties,protest_clustering,silent_clustering"
-;   file-close
-; ]
 
   reset-ticks
 
@@ -165,33 +166,36 @@ to go
   protest
   detect-clusters
 
-  ;; data collection - Every 100 steps, save data
+  if Data-save? [
 
-  if member? ticks data-output-interval  [
-    file-open word "attribs-" filename
-    ask turtles [file-print (word params "," ticks "," who "," nat_id  "," protest_state)]
-    file-close
+    ;; data collection - Every 100 steps, save data
+
+    if member? ticks data-output-interval  [
+      file-open word "attribs-" filename
+      ask turtles [file-print (word params "," ticks "," who "," nat_id  "," protest_state)]
+      file-close
+    ]
+
+    if member? ticks data-output-interval1  [
+      file-open word "output-" filename
+      file-print ( word params "," ticks "," Nat_ID_variance  "," Nat_ID_weighted "," Nat_ID_weighted_min "," Nat_ID_weighted_max "," Nat_ID_weighted_med "," Nat_ID_weighted_med1 "," Protester "," Homophilous "," network_ties "," protest_clustering "," silent_clustering)
+      file-close
+    ]
+
+    ;; sensitivity analyses data saving procedure -- comment out previous and uncomment this section
+
+    ;   if member? ticks data-output-interval  [
+    ;    file-open word "attribs-" filename1
+    ;    ask turtles [file-print (word params1 "," ticks "," who "," nat_id  "," protest_state)]
+    ;    file-close
+    ;  ]
+    ;
+    ;  if member? ticks data-output-interval1  [
+    ;    file-open word "output-" filename1
+    ;    file-print ( word params1 "," ticks "," Nat_ID_variance  "," Nat_ID_weighted "," Nat_ID_weighted_min "," Nat_ID_weighted_max "," Nat_ID_weighted_med "," Nat_ID_weighted_med1 "," Protester "," Homophilous "," network_ties "," protest_clustering "," silent_clustering)
+    ;    file-close
+    ;  ]
   ]
-
-  if member? ticks data-output-interval1  [
-    file-open word "output-" filename
-    file-print ( word params "," ticks "," Nat_ID_variance  "," Nat_ID_weighted "," Nat_ID_weighted_min "," Nat_ID_weighted_max "," Nat_ID_weighted_med "," Nat_ID_weighted_med1 "," Protester "," Homophilous "," network_ties "," protest_clustering "," silent_clustering)
-    file-close
-  ]
-
-  ;; sensitivity analyses data saving procedure -- comment out previous and uncomment this section
-
-;   if member? ticks data-output-interval  [
-;    file-open word "attribs-" filename1
-;    ask turtles [file-print (word params1 "," ticks "," who "," nat_id  "," protest_state)]
-;    file-close
-;  ]
-;
-;  if member? ticks data-output-interval1  [
-;    file-open word "output-" filename1
-;    file-print ( word params1 "," ticks "," Nat_ID_variance  "," Nat_ID_weighted "," Nat_ID_weighted_min "," Nat_ID_weighted_max "," Nat_ID_weighted_med "," Nat_ID_weighted_med1 "," Protester "," Homophilous "," network_ties "," protest_clustering "," silent_clustering)
-;    file-close
-;  ]
 
   tick
 
@@ -217,7 +221,7 @@ to import-random-online
 
 end
 
-to plot-ONfriends ;; additional plots of the degree distribution of online friends + log log one
+to plot-ONfriends
 
   set-current-plot "Degree distribution online friendships (log-log)"
   let linked turtles with [count my-online_friendships > 0]
@@ -241,7 +245,7 @@ to plot-ONfriends ;; additional plots of the degree distribution of online frien
 
 end
 
-to plot-OFFfriends ;; additional plots of the degree distribution of offline friends + log log one
+to plot-OFFfriends
 
   set-current-plot "Degree distribution offline friendships (log-log)"
   let max-degree max [count my-offline_friendships] of turtles
@@ -264,7 +268,7 @@ to plot-OFFfriends ;; additional plots of the degree distribution of offline fri
 
 end
 
-to save-edgelist  ;; saving the resulting social networks
+to save-edgelist
 
   if not file-exists? "online_edges.csv" [
     file-open "online_edges.csv"
@@ -307,10 +311,9 @@ to make-initial-links-homophily
 end
 
 to setup-online_turtles-homophily
-
   let linked onliners with [count my-online_friendships > 0 ]
   ask onliners [
-    let option linked with [abs(nat_id - [nat_id] of myself) < 0.5]
+    let option linked with [abs(nat_id - [nat_id] of myself) < 0.5] ;; make a param to set the network homphily setup
     repeat 23 [
       ifelse random 100 >= 10 [
         ifelse any? option  ;; based on homophily
@@ -321,13 +324,15 @@ to setup-online_turtles-homophily
     set linked (turtle-set linked self)
     ]
   ]
-  let leftovers onliners with [count my-online_friendships < 27] ;; min avg node degree
+  let leftovers onliners with [count my-online_friendships < 27]
   while [any? leftovers][
     ask leftovers [
       let howmany 27 - count my-online_friendships
       if howmany > 0 [   ;; we need this because some leftovers might have received extra links in the meantime
         let option linked with [abs(nat_id - [nat_id] of myself) < 0.5]
 
+        ;ifelse random 100 >= 10
+        ; [
         ifelse any? option ;; based on homophily
         [create-online_friendships-with up-to-n-of howmany other option [set color white set weight random-float 1]]
         [create-online_friendships-with up-to-n-of howmany other linked [set color white set weight random-float 1]]
@@ -349,6 +354,29 @@ to setup-links-homophily
       create-offline_friendship-with one-of other turtles with [abs(nat_id - [nat_id] of myself) < s] [set color grey set weight random-float 1]
     ]
   ]
+
+end
+
+
+to save-edgelist-H1
+
+  if not file-exists? "onlineH_edges.csv" [
+    file-open "onlineH_edges.csv"
+    file-print "t,end1,end2,weight"
+    file-close
+  ]
+  file-open "onlineH_edges.csv"
+  ask online_friendships [file-print (word ticks "," [who] of end1 "," [who] of end2 "," weight)]
+  file-close
+
+  if not file-exists? "offlineH_edges.csv" [
+    file-open "offlineH_edges.csv"
+    file-print "t,end1,end2,weight"
+    file-close
+  ]
+  file-open "offlineH_edges.csv"
+  ask offline_friendships [file-print (word ticks "," [who] of end1 "," [who] of end2 "," weight)]
+  file-close
 
 end
 
@@ -559,7 +587,7 @@ to read-agents-ceo ; reading in agent attributes (from CEO 2011 left-skewed dist
 end
 
 
-to set-characteristics ; -- setting the other agent attritbutes
+to set-characteristics
 
 ;; visual characteristics
   let val 1
@@ -583,7 +611,7 @@ to set-characteristics ; -- setting the other agent attritbutes
 
 end
 
-to set-characteristics_update ;; Those initially protesting, greater grievances
+to set-characteristics_update
 
   ask n-of (round ( n-agents / 100) * initial-protest-size) turtles
   [
@@ -724,14 +752,15 @@ to share
       let caller self
 
       if any? on_friends [
-        ask on_friends ;; one-to-all communication - online ties
+        ask on_friends ;; one-to-all
           [
             let wt [weight] of link-with caller
             if abs(caller-info - nat_id) - wt < uncertainty
             [
               set changed? true
+             ; ask link-with caller [set weight wt + (wt * d)] ;; social influence, we become closer together
 
-              let x (abs(caller-info - nat_id) * d) ;; Nat_id update
+              let x (abs(caller-info - nat_id) * d) ;; Attitude update
 
               ifelse abs(caller-info - nat_id) < s
               [
@@ -745,14 +774,15 @@ to share
       ]
 
       if any? off_friends [
-        ask one-of off_friends ;; one-to-one communication - offline ties
+        ask one-of off_friends ;; one-to-one
         [
           let wt [weight] of link-with caller
           if abs(caller-info - nat_id) - wt < uncertainty
             [
             set changed? true
+          ;  ask link-with caller [set weight wt + (wt * d)] ;; social influence, we become closer together
 
-            let x (abs(caller-info - nat_id) * d) ;; Nat_Id update
+            let x (abs(caller-info - nat_id) * d) ;; Attitude update
 
             ifelse abs(caller-info - nat_id) < s
             [
@@ -769,7 +799,7 @@ to share
 
 end
 
-to update-attitude ; for those agents that didn't update thei nat_if after getting info from their social networks
+to update-attitude
 
   let options turtles with [not changed?]
 
@@ -802,7 +832,7 @@ to protest
 
   ;; There are 2 protesting stages in this model and H=10
 
-  ;; claculating the group grievances - only counting in-group members, based on nat_id similarity
+  ;; claculating the group grievances - only counting in-group members
   ask turtles with [protest_state != 2 and any? link-neighbors]
 
   [
@@ -826,6 +856,8 @@ to protest
 
 
       let are-we-protesting? group_grievances + protest_support  >  costs + protest_against
+
+     ; print (word "My griev: " grievances "; group grievance: " group_grievances "; my cost: " costs "; % ppl protesting: " protest_support "; Am I protesting? " are-we-protesting?)
 
       ifelse are-we-protesting?
       [
@@ -853,7 +885,7 @@ to protest
 
 end
 
-to detect-clusters  ;; reports the n of agents in a (simple) majority of protest-only social networks
+to detect-clusters
 
   ask turtles
   [
@@ -871,8 +903,6 @@ to detect-clusters  ;; reports the n of agents in a (simple) majority of protest
   ]
 
 end
-
-
 ;;;;;;;;;;;;;;;
 ;;;; PLOTS ;;;;
 ;;;;;;;;;;;;;;;
@@ -880,7 +910,7 @@ end
 
 to plot-nat_id
 
-  set-current-plot "National Identity Dynamics"
+  set-current-plot "National Identity Attitudes"
   ask turtles
   [
    create-temporary-plot-pen (word "Turtle" (who + 1))
@@ -889,7 +919,17 @@ to plot-nat_id
   ]
 
 end
+;to plot-nat_id
 
+  ;set-current-plot "National Identity Attitudes"
+  ;ask turtles
+  ;[
+  ; create-temporary-plot-pen (word "Turtle" (who + 1))
+  ; set-plot-pen-color palette:scale-gradient palette:scheme-colors "Divergent" "PRGn" 6 nat_id -1 1
+  ; plot nat_id
+  ;]
+
+;end
 
 to plot-grievances
 
@@ -919,13 +959,16 @@ to plot-protest_state
     plot who
   ]
 
+;  ask turtles with [protest_state = 2]
+;  [
+;   set-current-plot-pen "protesting"
+;    plot who
+;  ]
 
 end
 
 ;;;;;;;;;;;;;;;;;;
 ;;;; REPORTERS;;;;
-;;;;;;;;;;;;;;;;;;
-
 
 to-report Protester
 
@@ -960,9 +1003,9 @@ to-report Nat_ID_weighted
 
 end
 
-to-report Nat_ID_weighted_min ;Q1
+to-report Nat_ID_weighted_min
 
-  let mini -1
+  let mini -1 ;min [nat_id] of turtles
 
   let mini1 mini + 0.5
 
@@ -973,31 +1016,9 @@ to-report Nat_ID_weighted_min ;Q1
 
 end
 
-to-report Nat_ID_weighted_med ;Q2
+to-report Nat_ID_weighted_max
 
-  let mini -0.5
-
-  let c (count turtles with [nat_id >= mini and nat_id < 0] / n-agents)
-
-  report c
-
-end
-
-
-to-report Nat_ID_weighted_med1 ; Q3
-
-
-  let maxi 0.5
-
-  let x (count turtles with [nat_id >= 0 and nat_id < maxi] / n-agents)
-
-  report x
-
-end
-
-to-report Nat_ID_weighted_max ;Q4
-
-  let maxi 1
+  let maxi 1 ; max [nat_id] of turtles
 
   let maxi1 maxi - 0.5
 
@@ -1007,6 +1028,28 @@ to-report Nat_ID_weighted_max ;Q4
 
 end
 
+
+to-report Nat_ID_weighted_med
+
+ ; let maxi max [nat_id] of turtles - s
+  let mini -0.5 ;min [nat_id] of turtles + 0.5
+
+  let c (count turtles with [nat_id >= mini and nat_id < 0] / n-agents)
+
+  report c
+
+end
+
+to-report Nat_ID_weighted_med1
+
+;  let maxi median [nat_id] of turtles
+  let maxi 0.5 ;max [nat_id] of turtles - 0.5
+
+  let x (count turtles with [nat_id >= 0 and nat_id < maxi] / n-agents)
+
+  report x
+
+end
 
 to-report homophilous
   let total count turtles with [any? online_friendships]
@@ -1029,6 +1072,12 @@ to-report silent_clustering
    report (count turtles with [sil_clust?] / n-agents) * 100
 
 end
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;; ADDITIONAL CODE ;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @#$#@#$#@
 GRAPHICS-WINDOW
 358
@@ -1321,6 +1370,17 @@ Similarity threshold
 0.0
 1
 
+SWITCH
+198
+336
+317
+369
+Data-save?
+Data-save?
+1
+1
+-1000
+
 @#$#@#$#@
 # SOCIAL IDENTITY MODEL OF PROTEST EMERGENCE (SIMPE)
 
@@ -1342,45 +1402,50 @@ There are three plots on the interface showing the distribution of national iden
 
 # HOW IT WORKS
 
-At setup, social networks are created. Offline social networks have a small-world network topology with an average node degree of 27 whereas the online social networks have a scale-free network topology with an average node degree of 45. Both values have been obtained from empirical studies (see Lubbers et al., 2019 and Dunbar et al., 2015). It should be noted that not every agent has online social networks and the proportion of agents that do have such networks is modelled after the Spanish internet use penetration value since this model focuses on the Catalan secessionist movement.
+At setup, social networks are created. Offline social networks have a small-world topology with an average node degree of 27 whereas the online social networks have a scale-free topology with an average node degree of 45. Both values have been obtained from empirical studies (see Lubbers et al., 2019 and Dunbar et al., 2015). It should be noted that not every agent has online social networks and the proportion of agents that do have such networks is modelled after the Spanish internet use penetration value since this model focuses on the Catalan secessionist movement.
 
-There are two initial social network scenarios independent of the network topologies, random and homophilous. *Random* each agent makes a tie with another agent based on random probability. *Homophilous*: the probability that an agent gets chosen depends on national identity similarity or homophily). This means that initially, ties are formed with those within the similarity threshold (see Deffuant et al., 2000;2004;2008) and then with the remainder of the agents.
+There are two social network scenarios, random and homophilous. *Random* each agent makes a tie with another agent based on random probability. *Homophilous*: the probability that an agent gets chosen depends on national identity similarity or homophil). This means that initially, ties are formed with those within the similarity threshold (see Deffuant et al., 2000;2004;2008) and then with the remainder of the agents.
 
-Since there are online social networks, there are two scenarios that control the information that agents get exposed to through social media platforms. *Filter-Bubble_ON* represents a media environment where agents get predominantly exposed to attitude-consistent information while also getting exposed to attitude-discrepant information in a smaller proportion, both in terms of national identity. *Filter-Bubble_OFF* represents a diverse media environment where agents get equally exposed to attitude-consistent and attitude-discrepant information. 
+Since there are online social networks, there are two scenarios that control the information that agents get exposed to through social media platforms. *Filter-Bubble_ON* represents a media environment where agents get predominantly exposed to attitude-consistent information while also getting exposed to attitude-discrepant information in a smaller proportion. *Filter-Bubble_OFF* represents a diverse media environment where agents get equally exposed to attitude-consistent and attitude-discrepant information.
 
-Since the key component of this model are national identity, two alternative distributions for this variable are provided. *normdis* : the distribution of national identities ranging from -1 to 1 is drawn from a normal-random distribution. *CEO2011*: each agent's national identity value was taken from the CEO October 2011 survey dataset (reference at end of document) resulting in a left-skewed distribution of national identities. This scenario offers a comparison from an abstract distribution with an empirically-informed one, representing Catalonia.
+Since the key component of this model are national identity attitudes, two alternative distributions for this variable are provided. *normdis* : each agent has a randomly distributed national identity attitude ranging from -1 to 1. *CEO2011*: each agent's national identity value was taken from the CEO October 2011 survey dataset (reference at end of document) resulting in a left-skewed distribution ranging from -1 to 1. This scenario is considered calibrated compared to the *normdis* one.
 
-Additionally to national identity, agents have (social) engagement levels, ranging from 0 to 1, representing their socialisation patterns and national identity uncertainty, ranging from 0 to 1, representing the strength of their views and room for persuasion to change their national identities. Similarly, agents grievance values are obtained from their national identities representing their discontent with the secessionist movement situation. Costs of participating in protest are also drawn from a random distribution and range from 0 to 1. 
+Additionally to national identity a, agents have a randomly distributed grievance value from 0 to 1 which indicates their discontent with the situation and promotes protesting. Costs of participating in protest are also drawn from a random distribution and range from 0 to 1. Similarly, agents have (social) engagement levels, ranging from 0 to 1, representing their socialisation patterns and attitude uncertainty, ranging from 0 to 1, representing the strength of their views and room for persuasion to change their attitudes.
 
-At each tick, each agent receives information whether from another agent or from the media's information hub. Three decisions will be made then by agents: sharing the information with their social networks, updating their national identities, and protesting which updates their grievances. Time is abstract in this model and represents the completion of all three of the decisions by all agents.
+At each tick, each agent will receive information whether from another agent or from the media's information hub. Three decisions will be made by agents: sharing the information with their social networks, updating their national identities, and protesting which updates their grievances. 
 
 Agents have two states: Silent (blue) and Protesting (red). If all agents are protesting, the simulation ends since the goal is to observe the emergence of protests.
 
 # HOW TO USE IT
 
-The Protesting-opportunity and Initial-protest-size sliders set the protesting opportunities available for agents and the initial number of protesting agents in the population.
+The Protesting-opportunity and Initial-protest-size sliders set the protesting opportunities available for agents and the initial number of protesting agents in the population at the start of the simulation.
 
 The Social-Media switch enables the filtering algorithm that preferentially sends attitude-supportive information to agents. If off, agents have equal probabilities of receiving attitude-supportive and attitude-discrepant messages.
 
-Networks switch enables the creation of homophilous networks at the start of the simulation, following the bounded confidence principle, links will be created with agents that are similar to oneself. Alternatively, links will be created at random.
+Networks switch enables the creation of homophilous networks at the start of the simulation, following the bounded confidence principle, links will be created with agents that are similar to oneself. Alternatively, links will be created at random regardless of the national identity similarity between agents.
 
 Press SETUP to populate the world with agents creating offline and online links. GO will run the simulation continuously.
 
-The View panel shows the agents in different protest states as well as their ties, grey or white corresponding to offline and online connections. The color of the patches is based on national identity attitude distribution and agents are placed on their national identity attitude. 
+The View panel currently doesn't show the agents in different protest states as well as their ties, grey or white corresponding to offline and online connections because of the large size of the population (N= 2,500) which takes a very long time to render. For that reason we have two separate plots that visualise the changes in national identities, grievance perceptions, and protesting states.
 
-The NATIONAL IDENTITY Histogram shows the distribution of national identities in the agent population. The PROTEST STATUS Plot shows the number of agents in each of the three protest states. The GRIEVANCE PERCEPTIONS on the far right histogram shows the distribution of grievance perceptions among agents.
+The National Identity Histogram shows changes in national identity at the population-level over time. The Grievance Perceptions Histogram shows the distribution of grievance perceptions. Lastly the Protest Status Plot shows the number of agents in each of the two protesting states, silent or protesting.
+
+Data-save? allows to save agent attributes and model outputs every 100 steps of the simulation. There are two separate data collection procedures in the Code, one for the general behaviour space and another for sensitivity analyses. You will need to (un)comment accordingly. In any case, it creates a separate file for the model outputs and agent attributes for the parameter combination. This is to allow to read them into R/Python more easily than a single 25GB file.
 
 # THINGS TO NOTICE
 
-In the presence of social media filter bubbles and initially homophilous social networks, after running the model for a while, national identity become polarized into two or four clusters while the proportion of protesting agents increases.
+After running the model for a while, national identities converge towards the centre of the distribution or they divide into two or more distinct clusters. This depends on the combination of initial social network configurations and social media filtering algorithms.
+
+It is also interesting to see how the effect of protesting opportunities on protest mobilisation plateaus for values larger than 0.5.
+
 
 # THINGS TO TRY
 
-How does the presence of filter bubbles affect distribution of national identities and protest emergence? 
+How does the presence of filter bubbles affect national identities and protest mobilisation?
 
-How does starting from a random network differ to starting from a homophilous network setup?
+How does starting from a random network compared to starting from a homophilous network setup affect national identities and protest mobilisation?
 
-How does the initial number of protesters affect the proportion of protesting agents at the end of the simulation.
+How does the initial number of protesting agents affect the resulting protest mobilisation dynamics?
 
 # CREDITS AND REFERENCES
 
